@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Visitor Management | LADLI Admin</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/assets/admin.css">
+<link rel="icon" href="/assets/images/favicon.ico">
+<style>
+  /* --- Visitor Management: mode toggle switch --------------------------- */
+  .mode-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .mode-switch {
+    position: relative;
+    width: 132px;
+    height: 40px;
+    border-radius: 999px;
+    background: var(--line);
+    border: none;
+    cursor: pointer;
+    padding: 3px;
+    flex: none;
+  }
+  .mode-switch:disabled { cursor: not-allowed; opacity: .6; }
+  .mode-switch-track {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+  .mode-switch-knob {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 63px;
+    height: 34px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--royal), var(--royal-dark));
+    box-shadow: 0 6px 14px rgba(31, 111, 229, .35);
+    transition: transform .22s var(--ease-out), background .22s ease;
+  }
+  .mode-switch[data-mode="manual"] .mode-switch-knob {
+    transform: translateX(63px);
+    background: linear-gradient(135deg, var(--pink), #c23f82);
+    box-shadow: 0 6px 14px rgba(233, 90, 165, .35);
+  }
+  .mode-switch-labels {
+    position: relative;
+    width: 100%;
+    display: flex;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .mode-switch-labels span {
+    width: 50%;
+    text-align: center;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    color: var(--ink-60);
+    transition: color .22s ease;
+  }
+  .mode-switch[data-mode="auto"] .mode-switch-labels span:first-child,
+  .mode-switch[data-mode="manual"] .mode-switch-labels span:last-child {
+    color: #fff;
+  }
+  .mode-current-label { font-size: 14px; color: var(--ink-60); }
+  .mode-current-label strong { color: var(--ink); }
+  .live-preview {
+    margin-top: 18px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: #f6f9fe;
+    border: 1px solid var(--line);
+    font-size: 13.5px;
+    color: var(--ink-60);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .live-preview .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 0 3px rgba(74, 222, 128, .2);
+    flex: none;
+  }
+  .live-preview strong { color: var(--ink); font-size: 16px; }
+  .live-preview-text { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .live-preview-icon { display: inline-flex; align-items: center; justify-content: center; color: var(--royal); }
+  .live-preview-icon svg { width: 14px; height: 14px; display: block; }
+  .field-hint { font-size: 12.5px; color: var(--ink-60); margin-top: 6px; }
+  .field-error-text {
+    font-size: 12.5px;
+    color: #d1345b;
+    margin-top: 6px;
+    display: none;
+  }
+  .field.has-error .field-error-text { display: block; }
+  .field.has-error input {
+    border-color: #d1345b !important;
+  }
+  input[type="number"].no-spin::-webkit-outer-spin-button,
+  input[type="number"].no-spin::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .manual-form-wrap { transition: opacity .2s ease; }
+  .manual-form-wrap[data-disabled="true"] { opacity: .45; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <img src="/assets/images/ladli-logo.webp" alt="LADLI">
+  <button id="sidebar-toggle" aria-label="Menu">&#9776;</button>
+</div>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><img src="/assets/images/ladli-logo.webp" alt="LADLI"></div>
+
+    <a class="side-link" href="/admin">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18M3 12h18M3 19h18"/></svg>
+      Enquiries
+    </a>
+    <a class="side-link active" href="/admin/visitors">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      Visitor Management
+    </a>
+    <a class="side-link" href="/admin/settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l-.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </a>
+    <a class="side-link" href="/" target="_blank">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
+      View Website
+    </a>
+
+    <div class="sidebar-foot">
+      <div class="sidebar-user"><strong id="sidebar-username">—</strong>Signed in</div>
+      <a class="side-link" href="#" id="logout-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        Sign Out
+      </a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h1>Visitor Management</h1>
+        <p>Auto mode shows the total number of unique devices/browsers that have ever visited the site. Manual mode shows a fixed number you choose. Stats auto-refresh every 10 seconds.</p>
+      </div>
+    </div>
+
+    <div class="stat-row" id="stat-row">
+      <div class="stat-card royal"><div class="stat-label">Total Unique Visitors (Auto)</div><div class="stat-value" id="stat-unique">—</div></div>
+      <div class="stat-card pink"><div class="stat-label">Manual Count</div><div class="stat-value" id="stat-manual">—</div></div>
+      <div class="stat-card orange"><div class="stat-label">Currently shown on website</div><div class="stat-value" id="stat-mode" style="font-size:20px">—</div></div>
+    </div>
+
+    <div class="form-error" id="visitors-error"></div>
+    <div class="form-success" id="visitors-success"></div>
+
+    <!-- Display Mode -->
+    <div class="panel" style="max-width:560px;padding:26px 24px;margin-bottom:20px">
+      <h3 style="margin:0 0 4px">Display Mode</h3>
+      <p style="margin:0 0 18px;color:var(--ink-60);font-size:13.5px">
+        <strong>Auto</strong> — counts every unique device/browser that has ever visited the site (a persistent id stored in that visitor's browser, not a page-view or session count).<br>
+        <strong>Manual</strong> — shows whatever fixed number you type in below.
+      </p>
+      <div class="mode-toggle-row">
+        <button type="button" class="mode-switch" id="mode-switch" data-mode="auto" role="switch" aria-checked="false" aria-label="Toggle between Auto and Manual visitor count">
+          <span class="mode-switch-track">
+            <span class="mode-switch-knob"></span>
+            <span class="mode-switch-labels"><span>Auto</span><span>Manual</span></span>
+          </span>
+        </button>
+        <div class="mode-current-label">Currently active: <strong id="mode-current-text">—</strong></div>
+      </div>
+      <div class="live-preview">
+        <span class="dot"></span>
+        <span class="live-preview-text">Website badge shows:
+          <span class="live-preview-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <strong id="live-preview-count">—</strong> Total Visitors
+        </span>
+      </div>
+    </div>
+
+    <!-- Manual Count -->
+    <div class="panel" style="max-width:560px;padding:26px 24px" id="manual-panel">
+      <h3 style="margin:0 0 4px">Set Manual Count</h3>
+      <p style="margin:0 0 16px;color:var(--ink-60);font-size:13.5px">
+        Type in the exact number of visitors you want the public site to
+        display. This is a fixed number — it will not change on its own.
+        Switch the mode above to "Manual" to show it. Must be a positive
+        whole number.
+      </p>
+      <div class="manual-form-wrap" id="manual-form-wrap">
+        <form id="manual-form" novalidate>
+          <div class="field" id="manual-field">
+            <label for="manual-count-input">Visitor count to display</label>
+            <input id="manual-count-input" name="manual_count" class="no-spin" type="number" inputmode="numeric" min="0" step="1" required placeholder="e.g. 500">
+            <div class="field-error-text" id="manual-error-text">Please enter a whole number that is 0 or greater.</div>
+            <div class="field-hint">Whole numbers only — no negatives or decimals.</div>
+          </div>
+          <button class="btn btn-primary btn-block" type="submit" id="manual-btn">Save Manual Count</button>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/admin/assets/admin.js"></script>
+<script>
+let currentMode = 'auto';
+
+async function boot() {
+  const me = await Admin.requireAuth();
+  if (!me) return;
+  document.getElementById('sidebar-username').textContent = me.username;
+  Admin.wireLogout(document.getElementById('logout-link'));
+  Admin.wireMobileSidebar();
+
+  document.getElementById('mode-switch').addEventListener('click', onToggleMode);
+  document.getElementById('manual-form').addEventListener('submit', onSaveManualCount);
+
+  wirePositiveIntegerInput(document.getElementById('manual-count-input'), document.getElementById('manual-field'));
+
+  load();
+  // Auto-refresh every 10 s so the unique-visitor total stays current
+  setInterval(load, 10000);
+}
+
+// --- Whole-number, non-negative input guard -------------------------------
+// Blocks "-", "+", "e"/"E" (scientific notation) and "." at the keystroke
+// level, and rejects a pasted value that isn't plain digits.
+function wirePositiveIntegerInput(input, fieldEl) {
+  input.addEventListener('keydown', (e) => {
+    if (['-', '+', 'e', 'E', '.'].includes(e.key)) e.preventDefault();
+  });
+  input.addEventListener('paste', (e) => {
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    if (!/^\d*$/.test(text.trim())) e.preventDefault();
+  });
+  const validate = () => {
+    const raw = input.value;
+    const isValid = raw !== '' && /^\d+$/.test(raw) && Number(raw) >= 0;
+    fieldEl.classList.toggle('has-error', raw !== '' && !isValid);
+    return isValid;
+  };
+  input.addEventListener('input', validate);
+  input.addEventListener('blur', () => {
+    if (input.value !== '' && Number(input.value) < 0) input.value = 0;
+  });
+}
+
+function isPositiveInteger(value) {
+  return /^\d+$/.test(String(value)) && Number(value) >= 0;
+}
+
+async function load() {
+  let stats;
+  try {
+    stats = await Admin.api('/api/admin/visitors');
+  } catch (e) {
+    document.getElementById('visitors-error').textContent = 'Could not load visitor stats.';
+    document.getElementById('visitors-error').classList.add('is-visible');
+    return;
+  }
+  render(stats);
+}
+
+function render(stats) {
+  document.getElementById('stat-unique').textContent = stats.unique_count.toLocaleString();
+  document.getElementById('stat-manual').textContent = stats.manual_count.toLocaleString();
+  document.getElementById('stat-mode').textContent = stats.mode === 'manual' ? 'Manual' : 'Auto';
+  currentMode = stats.mode;
+
+  const sw = document.getElementById('mode-switch');
+  sw.dataset.mode = stats.mode;
+  sw.setAttribute('aria-checked', stats.mode === 'manual' ? 'true' : 'false');
+  document.getElementById('mode-current-text').textContent = stats.mode === 'manual' ? 'Manual count' : 'Auto (unique visitors)';
+
+  const activeCount = stats.mode === 'manual' ? stats.manual_count : stats.unique_count;
+  document.getElementById('live-preview-count').textContent = activeCount.toLocaleString();
+
+  // Don't clobber a value the admin is actively typing.
+  const manualInput = document.getElementById('manual-count-input');
+  if (document.activeElement !== manualInput) manualInput.value = stats.manual_count;
+}
+
+function showMsg(type, text) {
+  const errorEl = document.getElementById('visitors-error');
+  const successEl = document.getElementById('visitors-success');
+  errorEl.classList.remove('is-visible');
+  successEl.classList.remove('is-visible');
+  if (type === 'error') { errorEl.textContent = text; errorEl.classList.add('is-visible'); }
+  else { successEl.textContent = text; successEl.classList.add('is-visible'); }
+}
+
+async function onToggleMode() {
+  const sw = document.getElementById('mode-switch');
+  const nextMode = currentMode === 'manual' ? 'auto' : 'manual';
+  sw.disabled = true;
+  try {
+    const stats = await Admin.api('/api/admin/visitors', {
+      method: 'POST',
+      body: JSON.stringify({ mode: nextMode }),
+    });
+    render(stats);
+    showMsg('success', `Website now shows the ${nextMode === 'manual' ? 'manual' : 'auto (live)'} count.`);
+  } catch (err) {
+    showMsg('error', err.message);
+  } finally {
+    sw.disabled = false;
+  }
+}
+
+async function onSaveManualCount(e) {
+  e.preventDefault();
+  const input = document.getElementById('manual-count-input');
+  const field = document.getElementById('manual-field');
+  const value = input.value.trim();
+
+  if (!isPositiveInteger(value)) {
+    field.classList.add('has-error');
+    showMsg('error', 'Manual count must be a whole number that is 0 or greater.');
+    input.focus();
+    return;
+  }
+  field.classList.remove('has-error');
+
+  const btn = document.getElementById('manual-btn');
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const stats = await Admin.api('/api/admin/visitors', {
+      method: 'POST',
+      body: JSON.stringify({ manual_count: parseInt(value, 10) }),
+    });
+    render(stats);
+    showMsg('success', 'Manual count updated successfully.');
+  } catch (err) {
+    showMsg('error', err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+boot();
+</script>
+</body>
+</html>

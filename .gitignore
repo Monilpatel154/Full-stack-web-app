@@ -1,0 +1,66 @@
+# ==============================================================================
+# LADLI Visitor Management & Laboratory Website - .gitignore
+# ==============================================================================
+
+# Sensitive Environment & Secrets (NEVER COMMIT CREDENTIALS)
+.env
+.env.*
+!.env.example
+
+# Python runtime & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Local databases, secrets & mail outbox
+data/ladli.db
+data/ladli.db-journal
+data/*.sqlite
+data/*.sqlite3
+data/secret.key
+data/mail-outbox/
+
+# Uploaded documents & binaries (preserves directory structure via .gitkeep)
+uploads/*
+!uploads/.gitkeep
+attachments/*
+!attachments/.gitkeep
+Ladli01.pdf
+.dist/
+
+# OS-generated files & IDE configuration
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+*.log

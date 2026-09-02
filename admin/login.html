@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Login | LADLI</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/assets/admin.css">
+<link rel="icon" href="/assets/images/favicon.ico">
+</head>
+<body>
+<div class="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo"><img src="/assets/images/ladli-logo.webp" alt="LADLI"></div>
+    <h1>Admin Portal</h1>
+    <p class="sub">Sign in to manage enquiries and visitor stats.</p>
+
+    <div class="flash-stack">
+      {% for category, message in get_flashed_messages(with_categories=true) %}
+        <div class="flash-alert flash-{{ category }}">
+          <span class="flash-icon" aria-hidden="true">
+            {% if category == 'success' %}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            {% else %}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 8v5M12 16.5h.01M12 3l9.5 17H2.5L12 3z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            {% endif %}
+          </span>
+          <span>{{ message }}</span>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="form-error" id="login-error" role="alert">
+      <span class="form-error-icon" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 8v5M12 16.5h.01M12 3l9.5 17H2.5L12 3z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="form-error-text" id="login-error-text"></span>
+    </div>
+
+    <form id="login-form" autocomplete="off">
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="password-field">
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+          <button type="button" class="password-toggle" aria-label="Show password">
+            <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a20.3 20.3 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a20.3 20.3 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="auth-links">
+        <a href="/admin/forgot-password">Forgot Password?</a>
+      </div>
+      <button class="btn btn-primary btn-block" type="submit" id="login-btn">Sign In</button>
+    </form>
+
+    <p class="auth-foot">First-run credentials are printed once in your server's terminal/console output when it starts.</p>
+  </div>
+</div>
+
+<script src="/admin/assets/admin.js"></script>
+<script>
+(async () => {
+  // If already logged in, skip straight to the dashboard (or the forced
+  // password-change screen, if this account still needs one).
+  try {
+    const res = await fetch('/api/admin/me', { credentials: 'same-origin' });
+    const me = await res.json();
+    if (me.logged_in) {
+      window.location.href = me.must_change_password ? '/admin/settings' : '/admin';
+    }
+  } catch (e) { /* not logged in — stay on this page */ }
+})();
+
+const form = document.getElementById('login-form');
+const errorEl = document.getElementById('login-error');
+const errorTextEl = document.getElementById('login-error-text');
+const btn = document.getElementById('login-btn');
+Admin.wirePasswordToggles();
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  errorEl.classList.remove('is-visible');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  try {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const result = await Admin.api('/api/admin/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+    // A correctly-entered current password goes straight to the
+    // dashboard — no forced reset screen in the way.
+    window.location.href = result.must_change_password ? '/admin/settings' : '/admin';
+  } catch (err) {
+    errorTextEl.textContent = err.message || 'Sign in failed.';
+    errorEl.classList.add('is-visible');
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
+});
+</script>
+</body>
+</html>

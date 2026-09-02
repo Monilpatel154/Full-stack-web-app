@@ -1,0 +1,145 @@
+# Going live on PythonAnywhere
+
+This walks you through putting the site on the internet using
+[PythonAnywhere](https://www.pythonanywhere.com/), a beginner-friendly
+Python host with a free tier. No credit card needed to start, and it
+gives you free HTTPS out of the box, which the admin login needs.
+
+Total time: 20–30 minutes the first time.
+
+## 1. Create your account
+
+1. Go to **pythonanywhere.com** and sign up for a **Beginner (free)**
+   account.
+2. Confirm your email if asked, then log in. You'll land on the
+   **Dashboard**.
+
+Your free account gives you a site at `https://<yourusername>.pythonanywhere.com`
+— that's a real, working, HTTPS web address you can share immediately.
+(A custom domain like `www.ladli.com` needs a paid PythonAnywhere plan
+and separate domain registration — optional, see step 8.)
+
+## 2. Upload the project
+
+1. Click the **Files** tab.
+2. Create a new folder, e.g. `ladli`.
+3. Open that folder, click **Upload a file**, and upload this zip
+   (`LADLI_visitor-management_fixed.zip`).
+4. Click **Consoles** → **Bash** to open a terminal, then unzip it:
+   ```bash
+   cd ~/ladli
+   unzip LADLI_visitor-management_fixed.zip
+   mv LADLI_visitor-management_fixed/* .
+   mv LADLI_visitor-management_fixed/.env* .
+   rmdir LADLI_visitor-management_fixed
+   ```
+
+## 3. Install dependencies
+
+Still in the Bash console:
+```bash
+cd ~/ladli
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+## 4. Set your real environment variables
+
+Edit `.env` (via the Files tab, or `nano .env` in the console) and set:
+```
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=<choose a strong password here, or leave this line out entirely>
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-gmail-app-password
+SMTP_USE_TLS=true
+MAIL_FROM_EMAIL=your-email@gmail.com
+MAIL_FROM_NAME=LADLI Electrical Testing and Calibration Laboratory
+MAIL_REPLY_TO=your-email@gmail.com
+```
+If you leave `ADMIN_PASSWORD` out, the app generates a strong one-time
+password itself and prints it to the log the first time it starts (see
+step 7) — you'll be forced to set your own password the moment you log
+in either way, so either approach is safe.
+
+## 5. Create the web app
+
+1. Click the **Web** tab → **Add a new web app** → **Next**.
+2. When asked to choose a framework, pick **Manual configuration**
+   (not the "Flask" wizard — this project already has its own
+   `app.py`/WSGI setup) → choose the latest available Python 3
+   version → **Next**.
+
+## 6. Point it at this project
+
+On the Web tab, in the **Code** section:
+- **Source code**: `/home/<yourusername>/ladli`
+- **Working directory**: `/home/<yourusername>/ladli`
+- **Virtualenv**: `/home/<yourusername>/ladli/.venv`
+
+Click the **WSGI configuration file** link — it opens an editor.
+Delete everything in it, and paste in the contents of this project's
+`wsgi_pythonanywhere.py`. Then change this one line near the top to
+your real path:
+```python
+project_home = os.environ.get('PYTHONANYWHERE_PROJECT_HOME', '/home/<yourusername>/ladli')
+```
+Save the file.
+
+In the **Static files** section, add these two mappings so images/CSS/JS
+load quickly (served directly instead of through Flask):
+| URL | Directory |
+|---|---|
+| `/assets/` | `/home/<yourusername>/ladli/site/assets/` |
+| `/admin/assets/` | `/home/<yourusername>/ladli/admin/assets/` |
+
+## 7. Go live
+
+Click the big green **Reload** button at the top of the Web tab.
+Then open `https://<yourusername>.pythonanywhere.com` in a new tab —
+the site should load.
+
+To find your admin login the first time: on the Web tab, scroll to
+**Log files** → open the **Error log**. Search (Ctrl+F) for
+"First run" — you'll see the generated username/password there.
+Go to `https://<yourusername>.pythonanywhere.com/admin/login`, sign
+in with those, and you'll be immediately prompted to set your own
+password before you can do anything else.
+
+## 8. Optional: a custom domain
+
+If you'd rather have `www.yourcompany.com` instead of the
+`.pythonanywhere.com` address:
+1. Buy a domain from any registrar (Namecheap, GoDaddy, Google
+   Domains, etc.) — usually $10–15/year.
+2. Upgrade to a paid PythonAnywhere plan (custom domains aren't
+   available on the free tier).
+3. Follow PythonAnywhere's **Web tab → Add a new web app → your
+   domain** flow, and update your domain's DNS records as PythonAnywhere
+   instructs (a CNAME or A record pointing at their servers).
+4. PythonAnywhere issues you a free HTTPS certificate for the custom
+   domain automatically.
+
+This step is entirely optional — the `.pythonanywhere.com` address
+works fully on the free tier with no domain purchase required.
+
+## 9. After you're live — a short checklist
+
+- [ ] Logged into `/admin` once and set your own password
+- [ ] Confirmed the contact form and quote form emails arrive
+      (check the SMTP settings in `.env` if not)
+- [ ] Replaced the placeholder domain in `site/sitemap.xml` and the
+      canonical/JSON-LD tags with your real live URL
+- [ ] Bookmarked the PythonAnywhere **Web tab** — you'll come back
+      here any time you upload new files and need to hit **Reload**
+
+## Keeping the site updated later
+
+Whenever you want to push changes:
+1. Upload the changed files via the Files tab (or `git pull` if
+   you're using version control).
+2. Go to the **Web** tab and click **Reload**.
+
+That's it — no downtime, no server restarts needed.
