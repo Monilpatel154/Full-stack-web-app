@@ -32,6 +32,8 @@ html {
   scrollbar-gutter: stable;
   min-width: 0;
   -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 body {
@@ -2338,7 +2340,7 @@ body > .site-footer {
   .nav {
     position: fixed;
     top: 0;
-    right: -100%;
+    right: 0;
     width: min(340px, 86vw);
     height: 100dvh;
     background: #ffffff !important;
@@ -2356,7 +2358,10 @@ body > .site-footer {
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
     scrollbar-color: var(--royal-18) transparent;
-    transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateX(105%);
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s ease;
   }
 
   .nav::-webkit-scrollbar {
@@ -2373,7 +2378,9 @@ body > .site-footer {
   }
 
   .nav.is-open {
-    right: 0;
+    transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .nav > a,
