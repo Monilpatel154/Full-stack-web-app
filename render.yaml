@@ -1,3 +1,4 @@
+staticPublishPath: site
 services:
   - type: web
     name: ladli-visitor-management
