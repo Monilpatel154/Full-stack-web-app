@@ -52,15 +52,17 @@ html:focus-within {
   }
 }
 
-/* =========================================================
-   Lab-themed background texture (very low-opacity pattern)
-   ========================================================= */
-body {
-  background-color: var(--white);
+/* Lab-themed background texture — uses a fixed pseudo-element instead of
+   background-attachment: fixed which triggers repaint on every scroll frame. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background-image:
     radial-gradient(circle at 1px 1px, rgba(31, 111, 229, 0.05) 1px, transparent 0);
   background-size: 34px 34px;
-  background-attachment: fixed;
 }
 
 /* =========================================================
@@ -70,7 +72,6 @@ body {
   opacity: 0;
   transform: translateY(14px);
   transition: opacity 400ms var(--ease-out), transform 400ms var(--ease-out);
-  will-change: transform, opacity;
 }
 
 .reveal.is-visible {
@@ -295,7 +296,6 @@ body {
 .contact-card,
 .gas {
   transform-style: preserve-3d;
-  will-change: transform;
   transition: transform 300ms var(--ease-out), box-shadow 300ms var(--ease-out), border-color 250ms var(--ease-out);
 }
 

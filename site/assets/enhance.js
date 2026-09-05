@@ -52,6 +52,11 @@
       el.classList.add('reveal');
       el.style.setProperty('--d', (i % 4));
       el.classList.add('reveal-stagger');
+      // Clean up will-change after the reveal transition completes to free GPU memory
+      el.addEventListener('transitionend', function cleanup() {
+        el.style.willChange = 'auto';
+        el.removeEventListener('transitionend', cleanup);
+      }, { once: true });
       io.observe(el);
     });
   } else {
@@ -76,6 +81,23 @@
     window.addEventListener('scroll', onScroll, {
       passive: true
     });
+  }
+
+  /* ---------- 2b. Remove #site-loader from DOM after fade-out ---------- */
+  const siteLoader = document.getElementById('site-loader');
+  if (siteLoader) {
+    if (siteLoader.classList.contains('loaded')) {
+      // Already hidden — remove immediately
+      siteLoader.remove();
+    } else {
+      siteLoader.addEventListener('transitionend', function onFade() {
+        siteLoader.remove();
+      }, { once: true });
+      // Fallback: if transitionend never fires (e.g. instant), remove after 1s
+      setTimeout(() => {
+        if (siteLoader.parentNode) siteLoader.remove();
+      }, 1000);
+    }
   }
 
   /* ---------- 3. 3D tilt on cards (pointer-fine devices only) ---------- */
@@ -166,44 +188,9 @@
     }
   }
 
-  /* ---------- 4. Animated number counters (stats panel) ---------- */
-  document.querySelectorAll('.stat strong').forEach(el => {
-    const raw = el.textContent.trim();
-    const match = raw.match(/^([\d,.]+)(.*)$/);
-    if (!match) return;
-    const numeric = parseFloat(match[1].replace(/,/g, ''));
-    if (isNaN(numeric)) return;
-    const suffix = match[2] || '';
-    el.dataset.count = numeric;
-    el.textContent = '0' + suffix;
-    const animate = () => {
-      const dur = 1200,
-        start = performance.now();
-      const step = (t) => {
-        const p = Math.min(1, (t - start) / dur);
-        const eased = 1 - Math.pow(1 - p, 3);
-        const val = Math.round(numeric * eased);
-        el.textContent = (Number.isInteger(numeric) ? val : val.toFixed(1)) + suffix;
-        if (p < 1) requestAnimationFrame(step);
-      };
-      requestAnimationFrame(step);
-    };
-    if ('IntersectionObserver' in window && !reduceMotion) {
-      const obs = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            animate();
-            obs.unobserve(entry.target);
-          }
-        });
-      }, {
-        threshold: 0.4
-      });
-      obs.observe(el);
-    } else {
-      el.textContent = raw;
-    }
-  });
+  /* ---------- 4. Animated number counters ---------- */
+  // Stat counter animation is handled exclusively by motion.js (anime.js).
+  // Previously duplicated here, causing a double-flash race condition.
 
   /* ---------- 5. Back to top ---------- */
   const backBtn = document.createElement('button');
@@ -293,12 +280,14 @@
   // cross-browser workaround is to cycle pre-rendered static frames through a
   // JS-controlled <link> element instead of relying on the browser to animate
   // one image internally.
+  // Limited to 3 full cycles to reduce idle CPU load.
   (function animatedFavicon() {
     const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduceMotion) return;
 
     const FRAME_COUNT = 12;
     const INTERVAL_MS = 150;
+    const MAX_CYCLES = 3;
     const base = 'assets/images/favicon-frames/frame-';
 
     const frames = [];
@@ -318,6 +307,8 @@
 
     let i = 0;
     let timer = null;
+    let totalTicks = 0;
+    const maxTicks = MAX_CYCLES * FRAME_COUNT;
 
     function tick() {
       const frame = frames[i];
@@ -325,10 +316,14 @@
         link.href = frame;
       });
       i = (i + 1) % frames.length;
+      totalTicks++;
+      if (totalTicks >= maxTicks) {
+        stop();
+      }
     }
 
     function start() {
-      if (timer) return;
+      if (timer || totalTicks >= maxTicks) return;
       tick();
       timer = setInterval(tick, INTERVAL_MS);
     }
