@@ -78,6 +78,9 @@ os.makedirs(os.path.dirname(SECRET_KEY_PATH), exist_ok=True)
 
 
 def get_or_create_secret_key():
+    configured_key = os.environ.get("SECRET_KEY", "").strip()
+    if configured_key:
+        return configured_key
     if os.path.exists(SECRET_KEY_PATH):
         with open(SECRET_KEY_PATH, "r") as f:
             key = f.read().strip()
@@ -144,6 +147,11 @@ def set_security_headers(response):
     if app.config["SESSION_COOKIE_SECURE"]:
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
+
+
+@app.route("/healthz")
+def health_check():
+    return jsonify({"status": "ok"})
 
 
 # ---------------------------------------------------------------------------
